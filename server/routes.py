@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify, make_response, render_template
 
-import logging
+
 from skimage.io import imread
+import argparse
+import logging
 import base64
 import os
 
@@ -109,5 +111,12 @@ def answer():
     return make_api_response({})
 
 
-def run_app(host, port, cert_file, key_file):
-    app.run(host=host, port=port)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('Server options')
+    parser.add_argument("--host", default='0.0.0.0', help="Host server")
+    parser.add_argument("--port", "-p", type=int, default=5000, help="Port server (default: 5000)")
+    parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
+    parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
+    args = parser.parse_args()
+
+    app.run(host=args.host, port=args.port)

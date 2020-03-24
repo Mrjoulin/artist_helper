@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from server.routes import run_app
+from server.routes import app
 
 logging.basicConfig(
     format='[%(asctime)s: %(filename)s:%(lineno)s - %(funcName)10s()]%(levelname)s:%(name)s:%(message)s',
@@ -17,4 +17,4 @@ if __name__ == '__main__':
     parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
     args = parser.parse_args()
 
-    run_app(port=args.port, host=args.host, cert_file=args.cert_file, key_file=args.key_file)
+    app.run(port=args.port, host=args.host)
