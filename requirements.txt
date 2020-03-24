@@ -5,6 +5,7 @@ setuptools
 opencv-python
 Pillow
 Flask
+gunicorn
 Werkzeug
 tensorflow==1.14.0
 
