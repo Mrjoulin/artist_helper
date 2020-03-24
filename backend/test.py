@@ -1,11 +1,12 @@
 from tensorflow.python.keras.models import load_model
 
+from skimage.transform import resize
+from skimage.io import imread
 import numpy as np
 import argparse
 import logging
 import time
 import json
-import cv2
 import os
 
 from backend.train import printProgressBar
@@ -48,8 +49,8 @@ def test_dataset():
         printProgressBar(0, len(images_paths), prefix='Test images progress:', suffix='Complete')
         for num_image in range(len(images_paths)):
             try:
-                image = cv2.imread(os.path.join(path_to_images, image_class, images_paths[num_image]))
-                image = cv2.resize(image, images_shape[:2])
+                image = imread(os.path.join(path_to_images, image_class, images_paths[num_image]))
+                image = resize(image, images_shape[:2])
                 test_images.append(image)
                 printProgressBar(num_image + 1, len(images_paths), prefix='Test images progress:', suffix='Complete')
             except Exception as ex:

@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, make_response, render_template
 
 import logging
+from skimage.io import imread
 import base64
-import cv2
 import os
 
 from backend.run import *
@@ -56,7 +56,7 @@ def process():
     path = PATH_TO_SAVE_IMAGES + 'dont_know/image_%s.jpg' % image_id
     with open(path, 'wb') as write_file:
         write_file.write(decode_img)
-    image = cv2.imread(path)
+    image = imread(path)
 
     logging.info('Start prediction image')
     predict = model.prediction(image)

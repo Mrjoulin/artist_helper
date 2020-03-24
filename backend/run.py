@@ -2,10 +2,11 @@ from tensorflow.python.keras.backend import set_session
 from tensorflow.python.keras.models import load_model
 import tensorflow as tf
 
+from skimage.transform import resize
+from skimage.io import imread
 import numpy as np
 import argparse
 import logging
-import cv2
 import json
 import time
 
@@ -38,7 +39,7 @@ class Model:
         with self.graph.as_default():
             set_session(self.sess)
             # prepare image
-            test_image = cv2.resize(test_image, image_shape[:2])
+            test_image = resize(test_image, image_shape[:2])
             test_image = test_image / 255.0
             test_image = np.array([test_image])
             # get prediction    predict = predict[0]
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', '-m', default='./model.h5', help='Path to you model .h5')
     args = parser.parse_args()
 
-    image = cv2.imread(args.image)
+    image = imread(args.image)
 
     model = Model(model_path=args.model)
 
