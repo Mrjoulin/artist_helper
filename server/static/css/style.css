@@ -1,0 +1,178 @@
+@font-face {
+    font-family: Montserrat;
+    src: url("../data/fonts/Montserrat-Medium.ttf");
+}
+
+input:focus, textarea, select, button {
+    outline: none !important;
+}
+
+button {
+    cursor: pointer;
+}
+
+.content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    padding: auto;
+    display: flex;
+    overflow-y: auto;
+
+    align-items: center;
+}
+
+.title {
+    position: absolute;
+    width: 816px;
+    height: 93px;
+    left: 94px;
+    top: 44px;
+
+    font-family: Montserrat;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 30px;
+    line-height: 37px;
+
+    color: #000000;
+}
+
+.select_button {
+    position: absolute;
+    width: 446px;
+    height: 425px;
+    left: 94px;
+    top: 181px;
+
+    border: 6px solid #000000;
+    box-sizing: border-box;
+    border-radius: 50px;
+
+    font-family: Montserrat;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 24px;
+    line-height: 29px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+
+    background: #FFFFFF;
+    color: #000000;
+}
+
+#preview-block {
+    position: absolute;
+    width: 446px;
+    height: 425px;
+    left: 94px;
+    top: 181px;
+
+    background: #FFFFFF;
+    display: none;
+}
+
+#other-image {
+    font-family: Montserrat;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 29px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+
+    padding: 5px 15px;
+    margin: 10px auto;
+
+    border: 0px;
+    background: #b4b7b8;
+    border-radius: 30px;
+    color: #FFFFFF;
+}
+
+#preview-image {
+   display: block;
+   width: auto;
+   margin: 0 auto;
+}
+
+#upload-message {
+    position: absolute;
+    width: 382px;
+    height: 425px;
+    left: 631px;
+    top: 181px;
+
+    font-family: Montserrat;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 26px;
+    line-height: 32px;
+    display: flex;
+    align-items: center;
+    text-align: right;
+    white-space: pre-line
+
+    color: #000000;
+}
+
+#right-answer {
+    position: absolute;
+    width: 372px;
+    left: 0px;
+    top: 460px;
+
+    display: none;
+}
+
+#selected-answer {
+    background: #FFFFFF;
+    border-left: 0px;
+    border-right: 0px;
+    border-top: 0px;
+    border-bottom: solid #000000 1.5px;
+
+    font-family: Montserrat;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 39px;
+    align-items: center;
+}
+
+#fetch-answer {
+    font-family: Montserrat;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 29px;
+    align-items: center;
+    text-align: center;
+
+    padding: 5px 15px;
+    margin-left: 10px;
+
+    border: 0px;
+    background: #b4b7b8;
+    border-radius: 30px;
+    color: #FFFFFF;
+}
+
+
+#buttons {
+    position: absolute;
+	bottom: 20px;
+	right: 40px;
+	width: 140px;
+	height: 50px;
+}
+
+#buttons button {
+    border: 0;
+    border-radius: 50%;
+    background: #FFFFFF;
+}
