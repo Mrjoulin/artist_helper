@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, make_response, render_template
-from werkzeug.contrib.fixers import ProxyFix
 
 import logging
 import base64
@@ -111,5 +110,4 @@ def answer():
 
 
 def run_app(host, port, cert_file, key_file):
-    app.wsgi_app = ProxyFix(app.wsgi_app)
     app.run(host=host, port=port)

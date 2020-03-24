@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript" >
+       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+       m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+       (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+       ym(61237756, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true
+       });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/61237756" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
     <meta charset="UTF-8">
     <title>Material detection</title>
     <link type="text/css" rel="stylesheet" href="../static/css/style.css">
@@ -20,7 +35,7 @@
         </div>
         <input type="file" id="upload" style="display: none" onchange="upload_file(event)">
         <div id="upload-message">
-            <p id="message">Загрузите изображение, чтобы определить, чем был наисован портрет</p>
+            <p id="message">Загрузите изображение, чтобы определить, чем был нарисован портрет</p>
             <div id="right-answer">
                 <select id="selected-answer"></select>
                 <button id="fetch-answer" onclick="fetchAnswer()">Отправить</button>
