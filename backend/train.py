@@ -2,8 +2,7 @@ from tensorflow.python.keras.layers import *
 from tensorflow import keras
 import tensorflow as tf
 
-from skimage.transform import resize
-from skimage.io import imread
+from cv2.cv2 import imread, resize
 import numpy as np
 import argparse
 import datetime

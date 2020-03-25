@@ -10,7 +10,6 @@ import logging
 import json
 import time
 
-
 CONFIG_FILE = './config.json'
 with open(CONFIG_FILE) as config_file:
     args = json.load(config_file)
@@ -34,15 +33,14 @@ class Model:
             logging.info('Cannot load model ' + str(args.model) + '. Exception: ' + str(e))
             exit(2)
 
-
     def prediction(self, test_image):
         with self.graph.as_default():
             set_session(self.sess)
             # prepare image
             test_image = resize(test_image, image_shape[:2])
-            test_image = test_image / 255.0
+            test_image = test_image[:, :, ::-1]
             test_image = np.array([test_image])
-            # get prediction    predict = predict[0]
+            # get prediction
 
             start = time.time()
             predict = self.model.predict(test_image)[0]
@@ -70,7 +68,7 @@ class Model:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', '-i', type=str, default='./2g.bmp', help='Path an image to render')
+    parser.add_argument('--image', '-i', type=str, default='./test.jpg', help='Path an image to render')
     parser.add_argument('--model', '-m', default='./model.h5', help='Path to you model .h5')
     args = parser.parse_args()
 

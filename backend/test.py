@@ -1,7 +1,6 @@
 from tensorflow.python.keras.models import load_model
 
-from skimage.transform import resize
-from skimage.io import imread
+from cv2.cv2 import imread, resize
 import numpy as np
 import argparse
 import logging
