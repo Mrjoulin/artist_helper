@@ -4,6 +4,7 @@ google-search-results-serpwow
 setuptools
 scikit-image
 Flask
+pymongo
 gunicorn
 tensorflow==1.14.0
 

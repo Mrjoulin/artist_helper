@@ -9,19 +9,24 @@ import argparse
 import logging
 import json
 import time
+import os
 
-CONFIG_FILE = './config.json'
-with open(CONFIG_FILE) as config_file:
-    args = json.load(config_file)
+image_shape = tuple([int(i) for i in os.getenv('IMAGES_SHAPE').split(',')])
+classes_file = str(os.getenv('IMAGES_CLASSES_FILE'))
+images_types = os.getenv("IMAGES_TYPES").split(',')
 
-image_shape = tuple(args['images_shape'])
-classes = list(args['classes'])
+classes = []
+with open(classes_file, 'r') as f:
+    classes_info = json.load(f)
+    for images_type in images_types:
+        if images_type in classes_info:
+            classes.append(classes_info[images_type])
 
 
 class Model:
     def __init__(self, model_path=None):
         if model_path is None:
-            model_path = str(args['model_path'])
+            model_path = str(os.getenv('MODEL_DIR')) + str(os.getenv("MODEL_NAME"))
 
         self.sess = tf.Session()
         self.graph = tf.get_default_graph()
@@ -50,7 +55,7 @@ class Model:
                 'Prediction time {pr_time}. Prediction result: {pr_res}. All prediction: {all}'
                 .format(
                     pr_time=time.time() - start,
-                    pr_res=classes[prediction_class],
+                    pr_res=classes[0][prediction_class],
                     all=predict
                 )
             )
@@ -61,7 +66,7 @@ class Model:
             return {
                 "prediction": sorted_predict,
                 "names": [
-                    classes[predict.index(predict_class)] for predict_class in sorted_predict
+                    classes[0][predict.index(predict_class)] for predict_class in sorted_predict
                 ]
             }
 

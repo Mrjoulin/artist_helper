@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  api:
+    build: api
+    container_name: artist_helper_api
+    ports:
+    - 8000:8000
+    environment:
+      - PATH_TO_SAVE_IMAGES=./images/get_from_user/
+      - IMAGES_SHAPE=60,60,3
+      - IMAGES_CLASSES_FILE=./images_classes.json
+      - IMAGES_TYPES=portrait
+      - MODEL_DIR=./models/
+      - MODEL_NAME=model_60x60.h5
+      - IMAGES_PATH=./images/downloads
+      - IMAGES_RESTRICTIONS=560
+      - SORT_IMAGES=1
+      - PERCENT_TO_TEST=0.1
+      - MONGO_HOST=34.71.231.56
+      - MONGO_PORT=27017
+      - MONGO_DATABASE_NAME=artist_helper
+      - MONGO_IMAGES_COLLECTION_NAME=images
+    restart: always
+
+  server:
+    build: server
+    container_name: artist_helper_server
+    links:
+      - api
+    depends_on:
+      - api
+    ports:
+    - 5000:5000
+    environment:
+      - SERVER_IP=34.71.231.56
+      - SERVER_PORT=8000
+    restart: always

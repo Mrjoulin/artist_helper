@@ -1,11 +1,5 @@
 {
-  "images_path": "./backend/images/downloads",
-  "images_shape": [60, 60, 3],
-  "images_restrictions": 560,
-  "sort_images": true,
-  "percent_to_test": 0.1,
-  "model_path": "./backend/models/model_60x60.h5",
-  "classes": [
+  "portrait": [
     "маслом",
     "акварелью",
     "темперой",
