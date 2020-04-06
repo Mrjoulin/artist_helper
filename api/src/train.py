@@ -2,12 +2,12 @@ from tensorflow.python.keras.layers import *
 from tensorflow import keras
 import tensorflow as tf
 
+from cv2.cv2 import imread, resize
 import numpy as np
 import argparse
 import datetime
 import logging
 import json
-import cv2
 import os
 
 logging.basicConfig(
@@ -17,19 +17,17 @@ logging.basicConfig(
 )
 
 # classes = ["watercolor", "pencil", "coal", "sangina|sepia", "oil", "gouache", "pen", "markers", "acrylic", "tempera"]
-MODEL_NAME = './backend/models/new_model' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.h5'
-CONFIG_FILE = './config.json'
 
-with open(CONFIG_FILE, 'r') as config_file:
-    args = json.load(config_file)
 
-path_to_images = args['images_path']
+MODEL_NAME = os.getenv("MODEL_DIR") + '/new_model' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.h5'
+
+path_to_images = os.getenv("IMAGES_PATH")
 classes = os.listdir(path_to_images)
 logging.info('Classes materials: ' + str(classes))
-images_shape = tuple(args['images_shape'])
-images_restrictions = args['images_restrictions']
-percent_to_test = args['percent_to_test']
-sort_images = args['sort_images']
+images_shape = tuple([int(i) for i in os.getenv('IMAGES_SHAPE').split(',')])
+images_restrictions = int(os.getenv("IMAGES_RESTRICTIONS"))
+percent_to_test = float(os.getenv("PERCENT_TO_TEST"))
+sort_images = bool(os.getenv("SORT_IMAGES"))
 
 
 # Print iterations progress
@@ -74,8 +72,8 @@ def prepare_data():
         printProgressBar(0, num_images_to_train, prefix='Train images progress:', suffix='Complete')
         for num_image in range(num_images_to_train):
             try:
-                image = cv2.imread(os.path.join(path_to_images, image_class, images_paths[num_image]))
-                image = cv2.resize(image, images_shape[:2])
+                image = imread(os.path.join(path_to_images, image_class, images_paths[num_image]))
+                image = resize(image, images_shape[:2])
                 train_images.append(image)
                 printProgressBar(num_image + 1, num_images_to_train, prefix='Train images progress:', suffix='Complete')
             except Exception as e:
@@ -87,8 +85,8 @@ def prepare_data():
         printProgressBar(0, num_images_to_train, prefix='Test images progress:', suffix='Complete')
         for num_image in range(len(images_paths) - num_images_to_train):
             try:
-                image = cv2.imread(os.path.join(path_to_images, image_class, images_paths[-1 - num_image]))
-                image = cv2.resize(image, images_shape[:2])
+                image = imread(os.path.join(path_to_images, image_class, images_paths[-1 - num_image]))
+                image = resize(image, images_shape[:2])
                 test_images.append(image)
                 printProgressBar(num_image + 1, len(images_paths) - num_images_to_train,
                                  prefix='Test images progress:', suffix='Complete')
@@ -160,7 +158,7 @@ def init_model(shape):
 
 def train(epochs=20, model_path=None):
     # Add tensorboard output
-    log_dir = "./backend/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = "./api/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
     train_images, train_labels, test_images, test_labels = prepare_data()

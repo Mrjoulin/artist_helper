@@ -63,7 +63,7 @@ def search_portraits():
             ]
         }
     }
-    path_to_images = "images/"
+    path_to_images = "api/images/data"
 
     for style in requests["need"].keys():
         if not os.path.exists(path_to_images + style):

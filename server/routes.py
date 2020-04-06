@@ -1,20 +1,56 @@
 from flask import Flask, request, jsonify, make_response, render_template
-
+import argparse
+import requests
 import logging
-import base64
-import cv2
 import os
 
-from backend.run import *
+logging.basicConfig(
+    format='[%(asctime)s: %(filename)s:%(lineno)s - %(funcName)10s()]%(levelname)s:%(name)s:%(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.INFO
+)
 
 app = Flask(__name__)
-model = Model()
-PATH_TO_SAVE_IMAGES = './backend/images/get_from_user/'
+
+SERVER_IP = os.getenv("SERVER_IP")
+SERVER_PORT = os.getenv("SERVER_PORT")
+
+DEFAULT_SERVER_IP = '34.71.231.56'
+DEFAULT_SERVER_PORT = 8000
 
 
 def make_api_response(payload, code=200):
     success = code == 200
+
     return make_response(jsonify({'success': success, 'payload': payload}), code)
+
+
+def make_api_request(method_name, **kwargs):
+    url = 'http://api:{port}/{method}'.format(
+        port=SERVER_PORT if SERVER_PORT else DEFAULT_SERVER_PORT,
+        method=method_name
+    )
+
+    try:
+        response = requests.post(url, json=kwargs).json()
+    except Exception as e:
+        logging.error(
+            "Got Exception: {exception}\nTry to connect to server {server_ip}".format(
+                exception=str(e),
+                server_ip=SERVER_IP if SERVER_IP else DEFAULT_SERVER_IP
+            )
+        )
+
+        url = url.replace('api', SERVER_IP if SERVER_IP else DEFAULT_SERVER_IP)
+
+        response = requests.post(url, json=kwargs).json()
+
+    logging.debug(str(response))
+
+    if not response['success']:
+        raise Exception(response['payload']['message'])
+
+    return response
 
 
 @app.route("/")
@@ -30,13 +66,8 @@ def process():
             "id": <int, unique digit for image>
             "image": "<base64 encoded image from user>"
     @:return:
-        {
-            "success": <success of request (bool)>,
-            "payload" : {
-                "predictions": [<array of integers with predictions from neural network (in sum gives 100 %)>],
-                "names": ["<array of names detected class material>"]
-            }
-        }
+        Response from api (json)
+        See more information in api/api.py
     '''
 
     if request.is_json:
@@ -46,33 +77,16 @@ def process():
 
     if 'image' in json and isinstance(json['image'], str) and \
             'id' in json and isinstance(json['id'], int):
-        image_id = json['id']
-        image_base64 = json['image']
+        logging.info('Create request to get prediction on image')
+        response = make_api_request(
+            "get_prediction",
+            image=json["image"],
+            id=json["id"]
+        )
     else:
         return make_api_response({}, code=405)
 
-    logging.info('Get image from user. Decode from base64.')
-    decode_img = base64.b64decode(image_base64.split(',')[1].encode('utf-8'))
-    path = PATH_TO_SAVE_IMAGES + 'dont_know/image_%s.jpg' % image_id
-    with open(path, 'wb') as write_file:
-        write_file.write(decode_img)
-    image = cv2.imread(path)
-
-    logging.info('Start prediction image')
-    predict = model.prediction(image)
-    result_predictions = []
-
-    for predict_class in predict['prediction']:
-        result_predictions.append(int(round(predict_class)))
-
-    result_predictions[0] = 100 - sum(result_predictions[1:])
-
-    # if rounding gives logical mistakes
-    if result_predictions[0] < result_predictions[1]:
-        result_predictions[0], result_predictions[1] = result_predictions[1], result_predictions[0]
-
-    logging.info('Return: predictions - ' + str(result_predictions) + '; names - ' + str(predict['names']))
-    return make_api_response({"predictions": result_predictions, "names": predict['names']})
+    return make_api_response(response['payload'])
 
 
 @app.route('/answer', methods=['POST'])
@@ -82,7 +96,10 @@ def answer():
             Json with:
                 "id": <int, unique digit for image>
                 "answer": "<name of class material>"
-        '''
+        @:return
+            Response from api (json)
+            See more information in api/api.py
+    '''
 
     if request.is_json:
         json = request.get_json()
@@ -91,23 +108,23 @@ def answer():
 
     if 'answer' in json and isinstance(json['answer'], str) and \
             'id' in json and isinstance(json['id'], int):
-        image_id = json['id']
-        answer_class = json['answer']
+        response = make_api_request(
+            "get_answer",
+            answer=json["answer"],
+            id=json["id"]
+        )
     else:
         return make_api_response({}, code=405)
 
-    path_to_save = os.path.join(PATH_TO_SAVE_IMAGES, answer_class)
-    if not os.path.exists(path_to_save):
-        os.mkdir(path_to_save)
-    try:
-        image_path = PATH_TO_SAVE_IMAGES + 'dont_know/image_%s.jpg' % image_id
-        os.rename(image_path, os.path.join(path_to_save, 'image_%s.jpg' % image_id))
-    except Exception as e:
-        logging.info('GET EXCEPTION: ' + str(e))
-        return make_api_response({}, code=405)
-
-    return make_api_response({})
+    return make_api_response(response['payload'])
 
 
-def run_app(host, port, cert_file, key_file):
-    app.run(host=host, port=port)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('Server options')
+    parser.add_argument("--host", default='0.0.0.0', help="Host server")
+    parser.add_argument("--port", "-p", type=int, default=5000, help="Port server (default: 5000)")
+    parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
+    parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
+    args = parser.parse_args()
+
+    app.run(host=args.host, port=args.port)

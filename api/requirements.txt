@@ -2,9 +2,9 @@ requests
 numpy==1.16.2
 google-search-results-serpwow
 setuptools
-opencv-python
-Pillow
+scikit-image
 Flask
-Werkzeug
+pymongo
+gunicorn
 tensorflow==1.14.0
 

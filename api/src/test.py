@@ -1,32 +1,28 @@
 from tensorflow.python.keras.models import load_model
 
+from cv2.cv2 import imread, resize
 import numpy as np
 import argparse
 import logging
 import time
 import json
-import cv2
 import os
 
-from backend.train import printProgressBar
+from .train import printProgressBar
 
 logging.basicConfig(
     format='[%(asctime)s: %(filename)s:%(lineno)s - %(funcName)10s()]%(levelname)s:%(name)s:%(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.INFO
 )
-CONFIG_FILE = './config.json'
 
-with open(CONFIG_FILE, 'r') as config_file:
-    args = json.load(config_file)
-
-path_to_images = args['images_path']
+path_to_images = os.getenv("IMAGES_PATH")
 classes = os.listdir(path_to_images)
 logging.info('Classes materials: ' + str(classes))
-images_shape = tuple(args['images_shape'])
-images_restrictions = args['images_restrictions']
-percent_to_test = args['percent_to_test']
-sort_images = bool(args['sort_images'])
+images_shape = tuple([int(i) for i in os.getenv('IMAGES_SHAPE').split(',')])
+images_restrictions = int(os.getenv("IMAGES_RESTRICTIONS"))
+percent_to_test = float(os.getenv("PERCENT_TO_TEST"))
+sort_images = bool(os.getenv("SORT_IMAGES"))
 
 
 def test_dataset():
@@ -48,8 +44,8 @@ def test_dataset():
         printProgressBar(0, len(images_paths), prefix='Test images progress:', suffix='Complete')
         for num_image in range(len(images_paths)):
             try:
-                image = cv2.imread(os.path.join(path_to_images, image_class, images_paths[num_image]))
-                image = cv2.resize(image, images_shape[:2])
+                image = imread(os.path.join(path_to_images, image_class, images_paths[num_image]))
+                image = resize(image, images_shape[:2])
                 test_images.append(image)
                 printProgressBar(num_image + 1, len(images_paths), prefix='Test images progress:', suffix='Complete')
             except Exception as ex:
