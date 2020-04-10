@@ -10,7 +10,12 @@ jobs:
       - checkout
       - run:
           name: Run app
-          command: docker-compose up -d --build
+          command: |
+            echo $DEPLOY_USER && echo $DEPLOY_HOST &&
+            ssh $DEPLOY_USER@$DEPLOY_HOST "
+            cd artist_helper &&
+            git pull &&
+            docker-compose up -d --build"
 
 workflows:
   main:
