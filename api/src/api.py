@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, make_response
-from skimage.io import imread
+from cv2.cv2 import imread
 import logging
 import base64
 import os
@@ -81,7 +81,10 @@ def get_prediction():
     if result_predictions[0] < result_predictions[1]:
         result_predictions[0], result_predictions[1] = result_predictions[1], result_predictions[0]
 
-    logging.info('Return: predictions - ' + str(result_predictions) + '; names - ' + str(predict['names']))
+    logging.info(
+        'Return: predictions - %s' %
+        [(prediction, prediction_class) for prediction, prediction_class in zip(result_predictions, predict['names'])]
+    )
     return make_api_response({"predictions": result_predictions, "names": predict['names']})
 
 

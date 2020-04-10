@@ -2,8 +2,7 @@ from tensorflow.python.keras.backend import set_session
 from tensorflow.python.keras.models import load_model
 import tensorflow as tf
 
-from skimage.transform import resize
-from skimage.io import imread
+from cv2.cv2 import imread, resize
 import numpy as np
 import argparse
 import logging
@@ -43,8 +42,7 @@ class Model:
             set_session(self.sess)
             # prepare image
             test_image = resize(test_image, image_shape[:2])
-            test_image = test_image[:, :, ::-1]
-            test_image = np.array([test_image])
+            test_image = np.array([test_image]) / 255.0
             # get prediction
 
             start = time.time()

@@ -2,7 +2,7 @@ requests
 numpy==1.16.2
 google-search-results-serpwow
 setuptools
-scikit-image
+opencv-python
 Flask
 pymongo
 gunicorn

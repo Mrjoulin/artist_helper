@@ -8,8 +8,13 @@ function loadAsArrayBuffer(file_path, theFile) {
 
         let select_block = document.getElementById('select-block'),
             preview_block = document.getElementById('preview-block'),
-            image = document.getElementById('preview-image');
+            image = document.getElementById('preview-image'),
+            loading = document.getElementById('loading'),
+            message = document.getElementById('message');
         image.src = dataView;
+        image.style.filter = "blur(3px)";
+        message.style.whiteSpace = 'pre-line';
+        message.textContent = 'Подождите немного\nИдёт обработка...'
 
         select_block.style.display = 'none';
         preview_block.style.display = 'block';
@@ -18,8 +23,21 @@ function loadAsArrayBuffer(file_path, theFile) {
             console.log(image.naturalWidth);
             if (image.naturalWidth > 446) {
                 image.style.width = 446 + 'px';
+                loading.style.left = 148 + 'px';
+                loading.style.top = (image.naturalHeight * 223) / image.naturalWidth  - 75 + 'px';
+            } else {
+                if (image.naturalWidth < 150) {
+                    image.style.width = 150 + 'px';
+                    loading.style.left = 0 + 'px';
+                    loading.style.top = (image.naturalHeight * 50) / image.naturalWidth  - 75 + 'px';
+                } else {
+                    loading.style.left = image.naturalWidth / 2 - 75 + 'px';
+                    loading.style.top = image.naturalHeight / 2 - 75 + 'px';
+                }
             }
+        loading.style.display = 'block';
         }
+
 
         fetch_image(dataView)
     };
@@ -54,12 +72,16 @@ function fetch_image(data){
             result => {
                 if (result['success']) {
                     let data = result['payload'],
-                        message = document.getElementById('message');
-                        answer_block = document.getElementById('right-answer');
+                        message = document.getElementById('message'),
+                        loading = document.getElementById('loading'),
+                        answer_block = document.getElementById('right-answer'),
+                        image = document.getElementById('preview-image'),
                         select = document.getElementById('selected-answer');
+                    image.style.filter = '';
                     answer_block.style.display = 'block';
                     select.textContent = '';
                     message.style.whiteSpace = 'pre-line';
+                    loading.style.display = 'none';
                     message.textContent = "Нейросеть считает,\n что портрет нарисован:";
                     for (let i = 0; i < data['names'].length; i++) {
                         var option = document.createElement("option");

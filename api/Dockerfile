@@ -2,6 +2,7 @@ FROM python:3.6.5
 
 WORKDIR /app/
 ADD requirements.txt .
+RUN apt-get update && apt-get install -y libsm6 libxext6 libxrender-dev python3-tk
 RUN pip install -r requirements.txt
 
 ADD . .

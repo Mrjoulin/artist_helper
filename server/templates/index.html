@@ -31,6 +31,11 @@
         </div>
         <div id="preview-block">
             <img id="preview-image" src="">
+            <div id="loading">
+                <svg id="load" x="0px" y="0px" viewBox="0 0 150 150">
+                    <circle id="loading-inner" cx="75" cy="75" r="60"/>
+                </svg>
+            </div>
             <button id="other-image" onclick="document.getElementById('upload').click()">Другая фотография</button>
         </div>
         <input type="file" id="upload" style="display: none" onchange="upload_file(event)">
