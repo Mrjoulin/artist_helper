@@ -1,0 +1,23 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@0.2.1
+
+jobs:
+  build:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Run app
+          command: |
+            echo $DEPLOY_USER && echo $DEPLOY_HOST &&
+            ssh $DEPLOY_USER@$DEPLOY_HOST "
+            cd artist_helper &&
+            git pull &&
+            sudo docker-compose up -d --build"
+
+workflows:
+  main:
+    jobs:
+      - build
