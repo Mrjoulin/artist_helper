@@ -62,7 +62,7 @@ def get_prediction():
 
     logging.info('Get image from user. Decode from base64.')
     decode_img = base64.decodebytes(image_base64.split(',')[1].encode('utf-8'))
-    path = PATH_TO_SAVE_IMAGES + 'dont_know/image_%s.jpg' % image_id
+    path = os.path.join(PATH_TO_SAVE_IMAGES, 'dont_know/image_%s.jpg' % image_id)
     with open(path, 'wb') as write_file:
         write_file.write(decode_img)
     image = imread(path)
@@ -70,22 +70,18 @@ def get_prediction():
 
     logging.info('Start prediction image')
     predict = model.prediction(image)
-    result_predictions = []
 
-    for predict_class in predict['prediction']:
-        result_predictions.append(int(round(predict_class)))
-
-    result_predictions[0] = 100 - sum(result_predictions[1:])
+    predict['prediction'][0] = 100 - sum(predict['prediction'][1:])
 
     # if rounding gives logical mistakes
-    if result_predictions[0] < result_predictions[1]:
-        result_predictions[0], result_predictions[1] = result_predictions[1], result_predictions[0]
+    if predict['prediction'][0] < predict['prediction'][1]:
+        predict['prediction'][0], predict['prediction'][1] = predict['prediction'][1], predict['prediction'][0]
 
     logging.info(
         'Return: predictions - %s' %
-        [(prediction, prediction_class) for prediction, prediction_class in zip(result_predictions, predict['names'])]
+        [(prediction, prediction_class) for prediction, prediction_class in zip(predict['prediction'], predict['names'])]
     )
-    return make_api_response({"predictions": result_predictions, "names": predict['names']})
+    return make_api_response({"predictions": predict['prediction'], "names": predict['names']})
 
 
 @app.route('/get_answer', methods=['POST'])

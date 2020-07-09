@@ -4,6 +4,7 @@ import tensorflow as tf
 
 from cv2.cv2 import imread, resize
 import numpy as np
+import unittest
 import argparse
 import logging
 import json
@@ -40,11 +41,17 @@ class Model:
     def prediction(self, test_image):
         with self.graph.as_default():
             set_session(self.sess)
-            # prepare image
+            # Prepare image
+            # Resize image to need shape
             test_image = resize(test_image, image_shape[:2])
-            test_image = np.array([test_image]) / 255.0
-            # get prediction
+            # Convert colors BGR to RGB
+            test_image = test_image[:, :, ::-1]
+            # Normalize image
+            test_image = test_image / 255.0
+            # Image expand dims
+            test_image = np.expand_dims(test_image, 0)
 
+            # Get prediction
             start = time.time()
             predict = self.model.predict(test_image)[0]
             prediction_class = int(np.argmax(predict))
@@ -58,14 +65,18 @@ class Model:
                 )
             )
 
-            predict = list(predict * 100)
-            sorted_predict = sorted(predict, reverse=True)
+            predict = (predict * 100).astype(np.uint8)
+            unique_predict = np.unique(predict)[::-1]
+
+            names = []
+            for predict_value in unique_predict:
+                names += [
+                    classes[0][value_index] for value_index in np.where(predict == predict_value)[0]
+                ]
 
             return {
-                "prediction": sorted_predict,
-                "names": [
-                    classes[0][predict.index(predict_class)] for predict_class in sorted_predict
-                ]
+                "prediction": sorted(map(int, predict), reverse=True),
+                "names": names
             }
 
 

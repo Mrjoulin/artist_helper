@@ -8,4 +8,6 @@ RUN pip install -r requirements.txt
 ADD . .
 
 EXPOSE 8000
-CMD gunicorn --threads 10 -b 0.0.0.0:8000 wsgi
+# Run tests
+# Run production
+CMD python3 src/test.py && gunicorn --threads 10 -b 0.0.0.0:8000 wsgi

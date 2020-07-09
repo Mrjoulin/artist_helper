@@ -49,6 +49,7 @@ def update_answer(image_id, answer):
     col = db[MONGO_IMAGES_COLLECTION_NAME]
 
     try:
+        logging.info('Write right answer for image %s - %s' % (image_id, answer))
         col.update_one({'_id': image_id}, {"$set": {"class": answer}})
     except Exception as e:
         logging.error("Exception when update answer for image %s: %s. Answer: %s" % (image_id, str(e), answer))

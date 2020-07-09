@@ -1,14 +1,22 @@
 from tensorflow.python.keras.layers import *
+from tensorflow.python.keras.regularizers import *
 from tensorflow import keras
 import tensorflow as tf
 
 from cv2.cv2 import imread, resize
+import threading as thr
+from PIL import Image
 import numpy as np
+import subprocess
 import argparse
 import datetime
 import logging
 import json
+import cv2
 import os
+
+# Local import
+from .utils import VisualizationUtils
 
 logging.basicConfig(
     format='[%(asctime)s: %(filename)s:%(lineno)s - %(funcName)10s()]%(levelname)s:%(name)s:%(message)s',
@@ -16,22 +24,55 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# classes = ["watercolor", "pencil", "coal", "sangina|sepia", "oil", "gouache", "pen", "markers", "acrylic", "tempera"]
+# List of tuples with models names and trained models history:
+# [
+#   (<model name>, <model history>),
+#   ...
+# ]
+MODELS = []
 
-
-MODEL_NAME = os.getenv("MODEL_DIR") + '/new_model' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.h5'
-
-path_to_images = os.getenv("IMAGES_PATH")
-classes = os.listdir(path_to_images)
-logging.info('Classes materials: ' + str(classes))
+# Set constants
 images_shape = tuple([int(i) for i in os.getenv('IMAGES_SHAPE').split(',')])
 images_restrictions = int(os.getenv("IMAGES_RESTRICTIONS"))
 percent_to_test = float(os.getenv("PERCENT_TO_TEST"))
-sort_images = bool(os.getenv("SORT_IMAGES"))
+shuffle_images = bool(os.getenv("SUFFLE_IMAGES"))
+
+
+# Check all data installed
+def check_data(path_to_images: str):
+    # Add images dublication
+    images_dublication = {}
+    nums_images = []
+    for class_name in classes:
+        _images = sorted(os.listdir(os.path.join(path_to_images, class_name)))
+        all_images = []
+        nums_images.append(len(_images))
+        for img_name in _images:
+            img_path = os.path.join(path_to_images, class_name, img_name)
+            try:
+                new_img = Image.open(img_path)
+                if new_img not in all_images:
+                    all_images.append(new_img)
+                else:
+                    print('Remove duble image:', img_path)
+                    os.remove(img_path)
+            except Exception as e:
+                print('Remove:', img_path, '(Exception: %s)' % str(e))
+                input()
+                os.remove(img_path)
+
+        images_dublication[class_name] = round(600 / len(_images))
+        print(class_name, '-', len(_images))
+
+    print('Mean:', np.mean(nums_images))
+    print('Sum:', np.sum(nums_images))
+    print("Images Dublication:", images_dublication)
+
+    return images_dublication
 
 
 # Print iterations progress
-def printProgressBar (iteration, total, prefix='', suffix='', decimals=1, length=50, fill='█', printEnd="\r"):
+def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=50, fill='█', printEnd="\r"):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -53,99 +94,150 @@ def printProgressBar (iteration, total, prefix='', suffix='', decimals=1, length
         print()
 
 
-def prepare_data():
+# Shuffle all data in images and labels
+def shuffle_dataset(images, labels):
+    num_images = len(images)
+    print("Generate dataset with %s images" % num_images)
+
+    perm = np.random.permutation(num_images)
+
+    images = np.array([images])[0][perm]
+    images = images / 255.0
+    labels = np.array([labels])[0][perm]
+
+    return images, labels
+
+
+def check_gpu_work():
+    subprocess.call(['nvidia-smi'])
+
+
+def prepare_data(path_to_images: str):
     train_images = []
     train_labels = []
     test_images = []
     test_labels = []
     for image_class in classes:
         images_paths = os.listdir(os.path.join(path_to_images, image_class))
-        if sort_images:
-            logging.info('Sort images')
-            images_paths.sort()
         # Limit on the number of images
         images_paths = images_paths[:images_restrictions]
-        train_images_errors = test_images_errors = 0
-        num_images_to_train = int(len(images_paths) * (1 - percent_to_test))
-        logging.info('Start prepare %s. Done: %s/%s' % (image_class, classes.index(image_class), len(classes)))
+        # List with all class images
+        images = []
+        print('Start prepare %s. Done: %s/%s' % (image_class, classes.index(image_class), len(classes)))
 
-        printProgressBar(0, num_images_to_train, prefix='Train images progress:', suffix='Complete')
-        for num_image in range(num_images_to_train):
+        for num_image, img_name in enumerate(images_paths):
             try:
-                image = imread(os.path.join(path_to_images, image_class, images_paths[num_image]))
-                image = resize(image, images_shape[:2])
-                train_images.append(image)
-                printProgressBar(num_image + 1, num_images_to_train, prefix='Train images progress:', suffix='Complete')
-            except Exception as e:
-                logging.info("GET EXCEPTION: " + str(e))
-                train_images_errors += 1
-        train_labels += [classes.index(image_class)] * (num_images_to_train - train_images_errors)
-        logging.info("Train images: " + str(len(train_images)) + ", train labels: " + str(len(train_labels)))
+                image = imread(os.path.join(path_to_images, image_class, img_name))
+                image = resize(image, images_shape[:2])[:, :, ::-1]
 
-        printProgressBar(0, num_images_to_train, prefix='Test images progress:', suffix='Complete')
-        for num_image in range(len(images_paths) - num_images_to_train):
-            try:
-                image = imread(os.path.join(path_to_images, image_class, images_paths[-1 - num_image]))
-                image = resize(image, images_shape[:2])
-                test_images.append(image)
-                printProgressBar(num_image + 1, len(images_paths) - num_images_to_train,
-                                 prefix='Test images progress:', suffix='Complete')
+                images.append(image)
+
+                if images_dublication[image_class] > 1:
+                    # Horizontal flip
+                    images.append(cv2.flip(image, 1))
+
+                if images_dublication[image_class] > 2:
+                    # Converting image to LAB Color model
+                    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+                    # Splitting the LAB image to different channels
+                    l, a, b = cv2.split(lab)
+                    # Applying CLAHE to L-channel
+                    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8)).apply(l)
+                    # Merge the CLAHE enhanced L-channel with the a and b channel
+                    limg = cv2.merge((clahe, a, b))
+                    # Converting image from LAB Color model to RGB model
+                    image = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+
+                    images.append(image)
+
+                printProgressBar(num_image + 1, len(images_paths), prefix='Load images progress:', suffix='Complete')
             except Exception as e:
-                logging.info("GET EXCEPTION: " + str(e))
-                test_images_errors += 1
-        test_labels += [classes.index(image_class)] * (len(images_paths) - num_images_to_train - test_images_errors)
-        logging.info("Test images: " + str(len(test_images)) + ", test labels: " + str(len(test_labels)))
+                print("GET EXCEPTION: " + str(e))
+
+        # Generate lables with the same lenght as images
+        labels = [classes.index(image_class)] * len(images)
+        print("Load images: " + str(len(images)) + ", load labels: " + str(len(labels)))
+
+        if shuffle_images:
+            print('Suffle images')
+            np.random.shuffle(images)
+
+        num_to_train = int(len(images) * (1 - percent_to_test))
+        train_images += images[:num_to_train]
+        train_labels += labels[:num_to_train]
+        test_images += images[num_to_train:]
+        test_labels += labels[num_to_train:]
 
     assert len(train_labels) == len(train_images)
     assert len(test_labels) == len(test_images)
 
-    num_train_images = len(train_images)
-    logging.info("Generate train dataset with %s images" % num_train_images)
+    train_images, train_labels = shuffle_dataset(train_images, train_labels)
+    test_images, test_labels = shuffle_dataset(test_images, test_labels)
 
-    perm = np.random.permutation(num_train_images)
-
-    train_images = np.array([train_images])[0][perm]
-    train_images = train_images / 255.0
-    train_labels = np.array([train_labels])[0][perm]
-
-    num_test_images = len(test_images)
-    logging.info("Generate test dataset with %s images" % num_test_images)
-
-    perm = np.random.permutation(num_test_images)
-
-    test_images = np.array([test_images])[0][perm]
-    test_images = test_images / 255.0
-    test_labels = np.array([test_labels])[0][perm]
-
-    logging.info("Train images dataset shape: " + str(train_images.shape))
-    logging.info("Train labels dataset shape: " + str(train_labels.shape))
-    logging.info("Test images dataset shape: " + str(test_images.shape))
-    logging.info("Test labels dataset shape: " + str(test_labels.shape))
+    print("Train images dataset shape: " + str(train_images.shape))
+    print("Train labels dataset shape: " + str(train_labels.shape))
+    print("Test images dataset shape: " + str(test_images.shape))
+    print("Test labels dataset shape: " + str(test_labels.shape))
 
     return train_images, train_labels, test_images, test_labels
 
 
+# Inintializate new Keras Model
 def init_model(shape):
+    start_filters_num = 8
+    kernel_size = 3
+    l2_regularizer_coef = 1e-4
 
     model = keras.Sequential([
-        Conv2D(16, (3, 3), padding="same", input_shape=shape, activation='relu'),
-        BatchNormalization(axis=-1),
-        MaxPooling2D(pool_size=(3, 3)),
+        Conv2D(start_filters_num, kernel_size, padding="same",
+               kernel_regularizer=l2(l2_regularizer_coef),
+               activation='relu', input_shape=shape),
+
+        BatchNormalization(),
+        MaxPooling2D(pool_size=(2, 2), strides=2),
         Dropout(0.25),
 
-        Conv2D(32, (3, 3), padding="same", activation='relu'),
-        BatchNormalization(axis=-1),
-        MaxPooling2D(pool_size=(2, 2)),
+        Conv2D(start_filters_num * 2, kernel_size,
+               kernel_regularizer=l2(l2_regularizer_coef),
+               padding="same", activation='relu'),
+
+        BatchNormalization(),
+        MaxPooling2D(pool_size=(2, 2), strides=2),
         Dropout(0.25),
 
-        Conv2D(32, (3, 3), padding="same", activation='relu'),
-        BatchNormalization(axis=-1),
-        MaxPooling2D(pool_size=(2, 2)),
+        Conv2D(start_filters_num * 4, kernel_size,
+               kernel_regularizer=l2(l2_regularizer_coef),
+               padding="same", activation='relu'),
+
+        BatchNormalization(),
+        MaxPooling2D(pool_size=(2, 2), strides=2),
+        Dropout(0.25),
+
+        Conv2D(start_filters_num * 8, kernel_size,
+               kernel_regularizer=l2(l2_regularizer_coef),
+               padding="same", activation='relu'),
+
+        BatchNormalization(),
+        MaxPooling2D(pool_size=(2, 2), strides=2),
+        Dropout(0.25),
+
+        Conv2D(start_filters_num * 16, kernel_size,
+               kernel_regularizer=l2(l2_regularizer_coef),
+               padding="same", activation='relu'),
+
+        BatchNormalization(),
+        MaxPooling2D(pool_size=(2, 2), strides=2),
+        Dropout(0.25),
 
         Flatten(),
-        Dense(1024, activation='relu'),
-        Dense(512, activation='relu'),
-        BatchNormalization(),
+
+        Dense(256, kernel_regularizer=l2(l2_regularizer_coef),
+              activation='relu'),
+        Dropout(0.5),
+
+        Dense(64, kernel_regularizer=l2(l2_regularizer_coef),
+              activation='relu'),
+        Dropout(0.5),
 
         Dense(len(classes), activation='softmax')
     ])
@@ -153,36 +245,117 @@ def init_model(shape):
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
+
     return model
 
 
-def train(epochs=20, model_path=None):
+def train(data=None, epochs=50, batch_size=128, old_model=None, model_path=None, output_dir='./'):
+    '''
+        :param data: (optional, default: None)
+            tuple or list with lenght 4. (Train Data, Train Labels, Test Data, Test Labels)
+        :param epochs: (optional, default: 50)
+            Number of epochs to train model
+        :param batch_size: (optional, default: 128)
+            Batch size to train model
+        :param old_model: (optional, default: None)
+            Trained Sequential model to train more
+        :param model_path: (optional, default: None)
+            Path to model .h5 to train it
+        :param output_dir: (optional, default: './')
+            Path to directory where to save model .h5 and tensorboard logs
+    '''
     # Add tensorboard output
-    log_dir = "./api/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    model_name = 'new_model' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.h5'
+    # Path to save model
+    new_model_path = os.path.join(output_dir, model_name)
+    # Path to save tensorboard logs
+    log_dir = os.path.join(output_dir, "logs/", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
     tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
-    train_images, train_labels, test_images, test_labels = prepare_data()
-
-    if model_path is None:
-        model = init_model(images_shape)
+    if data is not None:
+        if len(data) == 4:
+            train_images, train_labels, test_images, test_labels = data[0], data[1], data[2], data[3]
+        else:
+            raise Exception("Data is invalid. Check def params to get to know about data param")
     else:
+        print("Generate data")
+        train_images, train_labels, test_images, test_labels = prepare_data()
+
+    if old_model is None and model_path is None:
+        # Init new model
+        model = init_model(images_shape)
+    elif model_path:
+        # Load model from model_path
         model = keras.models.load_model(model_path)
+    else:
+        # Use old model
+        model = old_model
 
-    logging.info("Start training")
-    model.fit(train_images, train_labels, epochs=epochs, callbacks=[tensorboard_callback])
+    print("Model Summary:\n", model.summary())
 
-    logging.info('Save model to ' + MODEL_NAME)
-    model.save(MODEL_NAME)
+    print("Start training")
+    model_info = model.fit(
+        train_images, train_labels,
+        epochs=epochs,
+        callbacks=[tensorboard_callback],
+        batch_size=batch_size,
+        validation_data=(test_images, test_labels),
+    )
+
+    print('Save model to ' + new_model_path)
+    model.save(new_model_path)
     test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
-    logging.info("Test Loss: %s" % test_loss)
-    logging.info("Test accuracy: %s" % test_acc)
+    print(("Test Loss: %.4f" % test_loss).replace(".", ","))
+    print(("Test accuracy: %.4f" % test_acc).replace(".", ","))
+
+    return model, (model_name, model_info)
 
 
 if __name__ == '__main__':
+    # Parse args
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', '-e', type=int, default=28, help='Number of epochs in training')
+    parser.add_argument('--images_path', '-i', type=str, default=os.getenv("IMAGES_PATH"),
+                        help='Path to dirs with images on every class')
+    parser.add_argument('--epochs', '-e', type=int, default=50, help='Number of epochs in training')
+    parser.add_argument('--batch_size', '-b', type=int, default=128, help='Batch size to train model')
+    parser.add_argument('--output_dir', '-o', default='./',
+                        help='Path to directory where to save model .h5 and tensorboard logs')
     parser.add_argument('--model', '-m', default=None, help='Path to you model .h5')
     args = parser.parse_args()
 
-    logging.info('Train artist helper model v.0.0.1')
-    train(epochs=args.epochs, model_path=args.model)
+    logging.info("Training preparation")
+
+    classes = os.listdir(args.images_path)
+    logging.info('Classes materials: ' + str(classes))
+    # Check data installation and correct
+    images_dublication = check_data(args.images_path)
+    # Get all data
+    all_data = prepare_data(args.images_path)
+
+    logging.info('Train artist helper model v.0.0.2')
+
+    # Set timer to check GPU usage
+    thr.Timer(50, check_gpu_work).start()
+    # Train model
+    test_model, new_model = train(
+        data=all_data,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        model_path=args.model,
+        output_dir=args.output_dir
+    )
+
+    MODELS.append(new_model)
+
+    logging.info("Visualization trained model info")
+
+    visual = VisualizationUtils(model=test_model, data=all_data, classes=classes)
+
+    # Visualization functions
+    visual.create_images_plot(dt=0)
+    visual.create_images_plot(dt=1)
+
+    visual.plot_history(MODELS)
+    visual.plot_history(MODELS, key='loss')
+
+    visual.create_table()
