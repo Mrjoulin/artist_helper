@@ -17,7 +17,7 @@ services:
       - IMAGES_RESTRICTIONS=700
       - SHUFFLE_IMAGES=1
       - PERCENT_TO_TEST=0.1
-      - MONGO_HOST=34.71.231.56
+      - MONGO_HOST=35.204.1.167
       - MONGO_PORT=27017
       - MONGO_DATABASE_NAME=artist_helper
       - MONGO_IMAGES_COLLECTION_NAME=images
@@ -33,6 +33,6 @@ services:
     ports:
     - 5000:5000
     environment:
-      - SERVER_IP=34.71.231.56
+      - SERVER_IP=35.204.1.167
       - SERVER_PORT=8000
     restart: always
