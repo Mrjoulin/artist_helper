@@ -1,9 +1,9 @@
 FROM python:3.6.5
 
 WORKDIR /app/
+RUN apt-get update && apt-get install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev python3-tk
 ADD requirements.txt .
-RUN apt-get update && apt-get install -y libsm6 libxext6 libxrender-dev python3-tk
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip setuptools wheel
 RUN pip install -r requirements.txt
 
 ADD . .

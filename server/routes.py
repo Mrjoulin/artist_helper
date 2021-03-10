@@ -12,11 +12,8 @@ logging.basicConfig(
 
 app = Flask(__name__)
 
-SERVER_IP = os.getenv("SERVER_IP")
-SERVER_PORT = os.getenv("SERVER_PORT")
-
-DEFAULT_SERVER_IP = '34.71.231.56'
-DEFAULT_SERVER_PORT = 8000
+SERVER_IP = os.getenv("SERVER_IP") or "35.204.1.167"
+SERVER_PORT = os.getenv("SERVER_PORT") or 8000
 
 
 def make_api_response(payload, code=200):
@@ -27,7 +24,7 @@ def make_api_response(payload, code=200):
 
 def make_api_request(method_name, **kwargs):
     url = 'http://api:{port}/{method}'.format(
-        port=SERVER_PORT if SERVER_PORT else DEFAULT_SERVER_PORT,
+        port=SERVER_PORT,
         method=method_name
     )
 
@@ -37,11 +34,11 @@ def make_api_request(method_name, **kwargs):
         logging.error(
             "Got Exception: {exception}\nTry to connect to server {server_ip}".format(
                 exception=str(e),
-                server_ip=SERVER_IP if SERVER_IP else DEFAULT_SERVER_IP
+                server_ip=SERVER_IP
             )
         )
 
-        url = url.replace('api', SERVER_IP if SERVER_IP else DEFAULT_SERVER_IP)
+        url = url.replace('api', SERVER_IP)
 
         response = requests.post(url, json=kwargs).json()
 
