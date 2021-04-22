@@ -12,7 +12,7 @@ logging.basicConfig(
 
 app = Flask(__name__)
 
-SERVER_IP = os.getenv("SERVER_IP") or "35.204.1.167"
+SERVER_IP = os.getenv("SERVER_IP") or "35.204.187.136"
 SERVER_PORT = os.getenv("SERVER_PORT") or 8000
 
 
