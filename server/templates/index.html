@@ -25,7 +25,7 @@
     <div class="content">
         <h1 class="title">Нейронная сеть для определения материала, которым был написан портрет</h1>
         <div id="select-block">
-            <button class="select_button" onclick="document.getElementById('upload').click()">
+            <button id="select-button" onclick="document.getElementById('upload').click()">
                 <img src="../static/data/button.png">
             </button>
         </div>
@@ -38,7 +38,7 @@
             </div>
             <button id="other-image" onclick="document.getElementById('upload').click()">Другая фотография</button>
         </div>
-        <input type="file" id="upload" style="display: none" onchange="upload_file(event)">
+        <input type="file" id="upload" style="display: none">
         <div id="upload-message">
             <p id="message">Загрузите изображение, чтобы определить, чем был нарисован портрет</p>
             <div id="right-answer">
@@ -49,9 +49,12 @@
 
     </div>
     <div id="buttons">
-        <a href="https://vk.com/mrjoulin"><button id="vk"><img src="../static/data/vk-icon.webp" width="50px" height="50px"></button></a>
-        <a href="https://teleg.one/joulin"><button id="tg"><img src="../static/data/tg-icon.png" width="50px" height="50px"></button></a>
+        <a href="https://vk.com/mrjoulin" target="_blank"><button id="vk"><img src="../static/data/vk-icon.webp" width="50px" height="50px"></button></a>
+        <a href="https://t.me/joulin" target="_blank"><button id="tg"><img src="../static/data/tg-icon.png" width="50px" height="50px"></button></a>
     </div>
-<script src="../static/js/index.js"></script>
+
+    <script type="module" src="../static/js/index.js"></script>
+    <script type="module" src="../static/js/drug_and_drop.js"></script>
+
 </body>
 </html>

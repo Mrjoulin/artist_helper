@@ -40,12 +40,20 @@ button {
     color: #000000;
 }
 
-.select_button {
+#select-block {
     position: absolute;
     width: 446px;
     height: 425px;
     left: 94px;
     top: 181px;
+}
+
+#select-button {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
 
     border: 6px solid #000000;
     box-sizing: border-box;
@@ -62,6 +70,10 @@ button {
 
     background: #FFFFFF;
     color: #000000;
+}
+
+#select-button.highlight {
+  background: "#d4dcfc";
 }
 
 #preview-block {
