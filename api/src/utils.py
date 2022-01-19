@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import cv2
 
 
 class VisualizationUtils:
@@ -127,3 +128,24 @@ class VisualizationUtils:
             print('\n\n')
 
         plt.show()
+
+
+def get_image_with_edges(image: np.ndarray, min_val: int, max_val: int):
+    """
+    Overlay edges on image using Canny algorithm.
+    More info: https://docs.opencv.org/3.4/da/d22/tutorial_py_canny.html
+
+    :param image: Input image
+    :param min_val: Lower bound for intensity gradient
+    :param max_val: Upper bound for intensity gradient
+    :return: Image with edges
+
+    """
+
+    image = image * 255
+    # Find edges on image. If pixel is edge it is [255, 255, 255] else [0, 0, 0]
+    edges_img = cv2.cvtColor(cv2.Canny(image.astype(np.uint8), min_val, max_val), cv2.COLOR_GRAY2BGR)
+    # Overlay edges on image
+    image = image * (1 - edges_img / 255) + edges_img
+
+    return image / 255
